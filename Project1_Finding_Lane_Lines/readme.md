@@ -14,7 +14,7 @@ The goals / steps of this project are the following:
 [//]: # (Image References)
 
 [image1]: ./test_images_output/intermediate-steps-solidWhiteRight.jpg "solidWhiteRight.jpg"
-[image2]: ./test_images_output/intermediate-steps-solidWhiteCurve.jpg "solidWhiteCurve.jpg"
+[image2]: ./test_images_output/intermediate-steps-solidYellowLeft.jpg "solidYellowLeft.jpg"
 
 ---
 
@@ -24,7 +24,7 @@ The goals / steps of this project are the following:
 
 My pipeline consisted of 5 steps. First, I converted the images to grayscale, then I applied Gaussian blur followed by Canny edge detection, which results in a binary image showing edges. The Region-of-Interest mask was applied to only retain edges within the lane the vehicle is driving on. Finally, Hough transform was used to convert the binary map to lines.
 
-In order to draw a single line on the left and right lanes, I modified the `draw_lines()` function by assigning each line found by the Hough transform to either the "left" or "right" category, depending on the angle of the line, and the x-coordinate (with decision boundary being the middle of the image + some padding). The slopes of the line are averaged within the category. The start coordinates were found by extracting the x-coordinate largest resp. smallest x-coordinate for left resp. right, and in both cases the smallest y-coordinate within the category. The end coordinates are set to the image height for y. To find x, I extrapolate from the start using the slope found earlier. 
+In order to draw a single line on the left and right lanes, I modified the `draw_lines()` function by assigning each line found by the Hough transform to either the "left" or "right" category, depending on the angle of the line, and the x-coordinate (with decision boundary being the middle of the image + some padding). The slope of each line is the average of all the slopes within the category. The start coordinates were found by extracting the largest resp. smallest x-coordinate for left resp. right, and in both cases the smallest y-coordinate within the category. The end coordinates are set to the image height for y. To find x, I extrapolate from the start using the slope found earlier. 
 
 Example of the pipeline in action:
 

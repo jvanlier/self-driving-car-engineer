@@ -54,5 +54,13 @@ def binarize_lane_line_pixels(img, output_binary=False, s_thresh=(170, 255),
         return np.dstack((np.zeros_like(sx_binary), sx_binary, s_binary)) * 255
 
 
-def to_birdseye(img: np.ndarray) -> np.ndarray:
-    pass
+class BirdsEyeTansformer:
+    def __init__(self, src, dst):
+        self._m = cv2.getPerspectiveTransform(src, dst)
+
+    def apply(self, img: np.ndarray) -> np.ndarray:
+        return cv2.warpPerspective(img, self._m, (img.shape[1], img.shape[0]),
+                                   flags=cv2.INTER_LINEAR)
+
+    
+

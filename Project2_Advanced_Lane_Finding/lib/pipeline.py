@@ -61,6 +61,3 @@ class BirdsEyeTansformer:
     def apply(self, img: np.ndarray) -> np.ndarray:
         return cv2.warpPerspective(img, self._m, (img.shape[1], img.shape[0]),
                                    flags=cv2.INTER_LINEAR)
-
-    
-

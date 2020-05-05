@@ -23,6 +23,13 @@ class LineType(Enum):
         elif line_type == cls.RIGHT:
             return [0, 0, 255]
 
+    @classmethod
+    def to_str(cls, line_type):
+        if line_type == cls.LEFT:
+            return "left"
+        elif line_type == cls.RIGHT:
+            return "right"
+
 
 class Line:
     def __init__(self, params, sw_fit_viz):

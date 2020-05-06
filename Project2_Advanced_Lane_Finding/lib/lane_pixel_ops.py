@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 
+from .constants import LANE_AREA_SRC, LANE_AREA_DST
+
 
 def binarize_lane_line_pixels(img, output_binary=False, s_thresh=(170, 255),
                               sx_thresh=(20, 100)) -> np.ndarray:
@@ -55,8 +57,8 @@ def binarize_lane_line_pixels(img, output_binary=False, s_thresh=(170, 255),
 
 
 class BirdsEyeTansformer:
-    def __init__(self, src, dst):
-        self._m = cv2.getPerspectiveTransform(src, dst)
+    def __init__(self):
+        self._m = cv2.getPerspectiveTransform(LANE_AREA_SRC, LANE_AREA_DST)
 
     def apply(self, img: np.ndarray) -> np.ndarray:
         return cv2.warpPerspective(img, self._m, (img.shape[1], img.shape[0]),

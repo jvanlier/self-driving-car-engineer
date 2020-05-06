@@ -3,6 +3,8 @@ from enum import Enum
 import numpy as np
 import cv2
 
+from .constants import IMG_SHAPE, XM_PER_PIX, YM_PER_PIX
+
 # Sliding window hyperparameters
 # Choose the number of sliding windows
 NWINDOWS = 9
@@ -10,6 +12,8 @@ NWINDOWS = 9
 MARGIN = 120
 # Set minimum number of pixels found to recenter window
 MINPIX = 50
+# Where to evaluate Radius of Curvature:
+ROC_Y_EVAL = IMG_SHAPE[1] - 1
 
 
 class LineType(Enum):
@@ -32,10 +36,14 @@ class LineType(Enum):
 
 
 class Line:
-    def __init__(self, params, sw_fit_viz):
+    def __init__(self, line_type: LineType, params: np.ndarray,
+                 sw_fit_viz: np.ndarray):
+        self._params_meter = None
+        self._params = None
+
+        self.line_type = line_type
         self.params = params
         self.sw_fit_viz = sw_fit_viz
-        pass
 
     @classmethod
     def from_sliding_window(cls, binary_warped: np.ndarray,
@@ -55,7 +63,7 @@ class Line:
 
         cls._visualize_poly(sw_fit_viz, params)
 
-        return cls(params, sw_fit_viz)
+        return cls(line_type, params, sw_fit_viz)
 
     @staticmethod
     def _determine_intitial_x_position(binary_warped, line_type: LineType):
@@ -129,3 +137,29 @@ class Line:
 
     def update_from_prior(self):
         pass
+
+    @property
+    def radius_of_curvature(self):
+        """Radius of curvature in real-world kilometers."""
+        numerator = (
+            1 + (2 * self.params_meter[0] +
+                 self.params_meter[1]) ** 2) ** 1.5
+        denom = np.abs(2 * self.params_meter[0])
+        return (numerator / denom) / 1000
+
+    @property
+    def params(self):
+        return self._params
+
+    @params.setter
+    def params(self, val):
+        self._params = val
+        self._params_meter = \
+            np.array([val[0] * XM_PER_PIX / YM_PER_PIX ** 2,
+                      val[1] * XM_PER_PIX / YM_PER_PIX,
+                      val[2]])
+
+    @property
+    def params_meter(self):
+        return self._params_meter
+

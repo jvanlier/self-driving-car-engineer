@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Tuple
+from typing import List, Tuple
 
 import numpy as np
 import cv2
@@ -13,8 +13,9 @@ class Undistorter:
         self.dist = None
         self._calibrated = False
 
-    def calibrate(self, path: Path, draw: bool = False):
-        objpoints, imgpoints = self._determine_objpoints_imgpoints(path, draw)
+    def calibrate(self, image_paths: List[Path], draw: bool = False):
+        objpoints, imgpoints = self._determine_objpoints_imgpoints(
+            image_paths, draw)
 
         ret, self.mtx, self.dist, _, _, = cv2\
             .calibrateCamera(objpoints, imgpoints, self.img_shape, None, None)
@@ -28,7 +29,8 @@ class Undistorter:
         return cv2.undistort(img, self.mtx, self.dist, None, self.mtx)
 
     @staticmethod
-    def _determine_objpoints_imgpoints(path: Path, draw: bool) -> \
+    def _determine_objpoints_imgpoints(image_paths: List[Path],
+                                       draw: bool) -> \
             Tuple[np.ndarray, np.ndarray]:
         # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
         objp = np.zeros((6 * 9, 3), np.float32)
@@ -39,7 +41,7 @@ class Undistorter:
         imgpoints = []  # 2d points in image plane.
 
         # Step through the list and search for chessboard corners
-        for fname in path.glob("calibration*.jpg"):
+        for fname in image_paths:
             img = cv2.imread(str(fname))
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 

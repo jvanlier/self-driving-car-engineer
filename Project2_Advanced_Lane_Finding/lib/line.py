@@ -36,14 +36,20 @@ class LineType(Enum):
 
 
 class Line:
-    def __init__(self, line_type: LineType, params: np.ndarray,
+    def __init__(self, line_type: LineType, x_pixels, y_pixels,
                  sw_fit_viz: np.ndarray):
         self._params_meter = None
         self._params = None
 
         self.line_type = line_type
-        self.params = params
         self.sw_fit_viz = sw_fit_viz
+
+        self.params = self._fit_poly(x_pixels, y_pixels)
+
+        self.plot_line_xs, self.plot_line_ys = self._calc_poly(
+            self.params, sw_fit_viz.shape[0])
+
+        self._visualize_poly()
 
     @classmethod
     def from_sliding_window(cls, binary_warped: np.ndarray,
@@ -59,11 +65,7 @@ class Line:
             cv2.rectangle(sw_fit_viz, *rect, (0, 255, 0), 2)
         sw_fit_viz[y_pixels, x_pixels] = LineType.color(line_type)
 
-        params = cls._fit_poly(x_pixels, y_pixels)
-
-        cls._visualize_poly(sw_fit_viz, params)
-
-        return cls(line_type, params, sw_fit_viz)
+        return cls(line_type, x_pixels, y_pixels, sw_fit_viz)
 
     @staticmethod
     def _determine_intitial_x_position(binary_warped, line_type: LineType):
@@ -125,14 +127,16 @@ class Line:
         return np.polyfit(y_pixels, x_pixels, 2)
 
     @staticmethod
-    def _visualize_poly(sw_fit_viz, params):
-        dim_y = sw_fit_viz.shape[0]
+    def _calc_poly(params, dim_y):
         ys = np.arange(0, dim_y - 1, dtype=np.int32)
-        xs = np.round(np.polyval(params, ys))
+        xs = np.round(np.polyval(params, ys)).astype(np.int32)
+        return xs, ys
 
-        line_pts = (np.asarray([xs, ys]).T).astype(np.int32)
+    def _visualize_poly(self):
+        line_pts = (np.asarray([self.plot_line_xs, 
+                                self.plot_line_ys]).T).astype(np.int32)
 
-        return cv2.polylines(sw_fit_viz, [line_pts], False, (255, 255, 0),
+        return cv2.polylines(self.sw_fit_viz, [line_pts], False, (255, 255, 0),
                              thickness=5)
 
     def update_from_prior(self):

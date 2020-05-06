@@ -59,7 +59,13 @@ def binarize_lane_line_pixels(img, output_binary=False, s_thresh=(170, 255),
 class BirdsEyeTansformer:
     def __init__(self):
         self._m = cv2.getPerspectiveTransform(LANE_AREA_SRC, LANE_AREA_DST)
+        self._m_inv = np.linalg.pinv(self._m)
 
     def apply(self, img: np.ndarray) -> np.ndarray:
         return cv2.warpPerspective(img, self._m, (img.shape[1], img.shape[0]),
+                                   flags=cv2.INTER_LINEAR)
+
+    def revert(self, img: np.ndarray) -> np.ndarray:
+        return cv2.warpPerspective(img, self._m_inv,
+                                   (img.shape[1], img.shape[0]),
                                    flags=cv2.INTER_LINEAR)

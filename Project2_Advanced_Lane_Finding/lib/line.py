@@ -129,31 +129,3 @@ class Line:
 
     def update_from_prior(self):
         pass
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

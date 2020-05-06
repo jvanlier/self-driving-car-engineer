@@ -7,7 +7,7 @@ import cv2
 # Choose the number of sliding windows
 NWINDOWS = 9
 # Set the width of the windows +/- margin
-MARGIN = 100
+MARGIN = 120
 # Set minimum number of pixels found to recenter window
 MINPIX = 50
 
@@ -51,9 +51,11 @@ class Line:
             cv2.rectangle(sw_fit_viz, *rect, (0, 255, 0), 2)
         sw_fit_viz[y_pixels, x_pixels] = LineType.color(line_type)
 
-        # TODO: fit and initialize
+        params = cls._fit_poly(x_pixels, y_pixels)
 
-        return cls(None, sw_fit_viz)
+        cls._visualize_poly(sw_fit_viz, params)
+
+        return cls(params, sw_fit_viz)
 
     @staticmethod
     def _determine_intitial_x_position(binary_warped, line_type: LineType):
@@ -111,8 +113,47 @@ class Line:
         return nonzerox[lane_inds], nonzeroy[lane_inds], rectangles
 
     @staticmethod
-    def _fit_poly():
-        pass
+    def _fit_poly(x_pixels, y_pixels):
+        return np.polyfit(y_pixels, x_pixels, 2)
+
+    @staticmethod
+    def _visualize_poly(sw_fit_viz, params):
+        dim_y = sw_fit_viz.shape[0]
+        ys = np.arange(0, dim_y - 1, dtype=np.int32)
+        xs = np.round(np.polyval(params, ys))
+
+        line_pts = (np.asarray([xs, ys]).T).astype(np.int32)
+
+        return cv2.polylines(sw_fit_viz, [line_pts], False, (255, 255, 0),
+                             thickness=5)
 
     def update_from_prior(self):
         pass
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

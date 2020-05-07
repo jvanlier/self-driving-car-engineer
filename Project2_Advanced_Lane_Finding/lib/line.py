@@ -15,6 +15,9 @@ MINPIX = 50
 # Where to evaluate Radius of Curvature:
 ROC_Y_EVAL = IMG_SHAPE[1] - 1
 
+# Look ahead filter margin:
+LAF_MARGIN = 100
+
 
 class LineType(Enum):
     LEFT = 1
@@ -49,7 +52,7 @@ class Line:
         self.plot_line_xs, self.plot_line_ys = self._calc_poly(
             self.params, sw_fit_viz.shape[0])
 
-        self._visualize_poly()
+        self._visualize_poly_sw_fit_viz()
 
     @classmethod
     def from_sliding_window(cls, binary_warped: np.ndarray,
@@ -90,9 +93,7 @@ class Line:
         window_height = np.int(binary_warped.shape[0] // NWINDOWS)
         # Identify the x and y positions of all nonzero (i.e. activated)
         # pixels in the image:
-        nonzero = binary_warped.nonzero()
-        nonzeroy = np.array(nonzero[0])
-        nonzerox = np.array(nonzero[1])
+        nonzeroy, nonzerox = binary_warped.nonzero()
 
         x_current = initial_x
         rectangles = []
@@ -128,19 +129,36 @@ class Line:
 
     @staticmethod
     def _calc_poly(params, dim_y):
-        ys = np.arange(0, dim_y - 1, dtype=np.int32)
+        ys = np.arange(0, dim_y, dtype=np.int32)
         xs = np.round(np.polyval(params, ys)).astype(np.int32)
         return xs, ys
 
-    def _visualize_poly(self):
-        line_pts = (np.asarray([self.plot_line_xs, 
+    def _visualize_poly_sw_fit_viz(self):
+        """Visualize polynomial specifically for initial sliding window fit.
+        These visualizations are *not* re-created for updates on a video
+        stream using look-ahead filter (for efficiency reasons).
+        """
+        line_pts = (np.asarray([self.plot_line_xs,
                                 self.plot_line_ys]).T).astype(np.int32)
 
         return cv2.polylines(self.sw_fit_viz, [line_pts], False, (255, 255, 0),
                              thickness=5)
 
-    def update_from_prior(self):
-        pass
+    def update_from_prior(self, binary_warped):
+        nonzeroy, nonzerox = binary_warped.nonzero()
+
+        xs = np.polyval(self.params, nonzeroy)
+
+        lane_inds = ((nonzerox >= xs - LAF_MARGIN) &
+                     (nonzerox < xs + LAF_MARGIN))
+
+        x_pixels = nonzerox[lane_inds]
+        y_pixels = nonzeroy[lane_inds]
+
+        self.params = self._fit_poly(x_pixels, y_pixels)
+
+        self.plot_line_xs, self.plot_line_ys = self._calc_poly(
+            self.params, binary_warped.shape[0])
 
     @property
     def radius_of_curvature(self):
@@ -166,4 +184,3 @@ class Line:
     @property
     def params_meter(self):
         return self._params_meter
-

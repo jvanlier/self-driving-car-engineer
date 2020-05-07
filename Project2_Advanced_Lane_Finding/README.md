@@ -17,9 +17,9 @@ The goals / steps of this project are the following:
 
 [//]: # (Image References)
 
-[image1]: ./test_images_out/example-distortion-corrected.png "Undistorted"
-[image2]: ./test_images_out/steps_test1.png "Example pipeline test1.png"
-[image3]: ./test_images_out/steps_test1.png "Example pipeline straight_lines_1.png"
+[image1]: ./test_images_output/example-distortion-corrected.png "Undistorted"
+[image2]: ./test_images_output/steps_test1.png "Example pipeline test1.png"
+[image3]: ./test_images_output/steps_test1.png "Example pipeline straight_lines_1.png"
 [video1]: ./project_video.mp4 "Video"
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/571/view) Points

@@ -20,7 +20,7 @@ The goals / steps of this project are the following:
 [image1]: ./test_images_output/example-distortion-corrected.png "Undistorted"
 [image2]: ./test_images_output/steps_test1.png "Example pipeline test1.png"
 [image3]: ./test_images_output/steps_straight_lines1.png "Example pipeline straight_lines_1.png"
-[video1]: ./project_video.mp4 "Video"
+[video1]: ./test_videos_output/project_video.mp4 "Video"
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/571/view) Points
 
@@ -46,14 +46,14 @@ The distortion correction is applied with the `apply()` method, which calls `cv2
 
 Please see these two figures for a demonstration of all steps in the pipeline:
 
-[!alt][image2]
-[!alt][image3]
+![alt][image2]
+![alt][image3]
 
 Figures for the other test images are available in the `test_images_output` directory.
 
 #### 1. Provide an example of a distortion-corrected image.
 
-See the images with title "Undistorted". The field of view is a bit cropped due to the distortion correction, which can be seen clearly by comparing the tail lights of the white car.
+See the images with title "Undistorted". The field of view is a bit cropped due to the distortion correction, which can be seen clearly by comparing the tail lights of the white car for `test1.jpg`.
 
 #### 2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
 
@@ -103,7 +103,7 @@ The relative position of the vehicle is also calculated in the `lib/road_lane.py
 
 #### 6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
 
-The plotting of the lane line polygon is done in the Notebook, function `visualize_lane_line`.
+The plotting of the lane line polygon is done in the Notebook, function `visualize_lane_line()`.
 
 In the figures above, see image with title "Visualize lane + metrics".
 
@@ -114,7 +114,11 @@ In the figures above, see image with title "Visualize lane + metrics".
 
 #### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
 
-For the video pipeline, I implemented searching from a prior (see `lib/line.py` lines 147 to 161, annd `lib/road_lane.py` lines 49 to 84`), sanity checks that verify the width of the lane in the top and the bottom (see `lib/road_lane.py` lines 86 to 100), and a reset after 25 frames if it failes to recover.
+For the video pipeline, I implemented:
+
+- searching from a prior (see `lib/line.py` lines 147 to 161, and `lib/road_lane.py` lines 49 to 84)
+- sanity checks that verify the width of the lane in the top and the bottom (see `lib/road_lane.py` lines 86 to 100)
+- A reset after 25 frames if it failes to recover.
 
 Here's a [link to my video result](./test_videos_output/project_video.mp4)
 
@@ -129,16 +133,17 @@ One issue that I was not able to solve, is a large difference in the radius of c
 Regarding smoothing, I did implement it in the previous project. It did not seem to be needed here to get a good result on the project video.
 
 The pipeline does break down on the challenge video, however. There are various reasons for this:
-- the barrier in the middle of the road and shadows cause sharp edges
-- different pieces of asphalt in a single lane, causing an edge to be detected
-- no smoothing
-- the sanity check for the width of the top of the lane is very sensitive: small mistakes are blown up by the perspective transform, leading to large deviations from the expected 3.7 m
 
-If I were to keep working on this, I would try to improve the following:
-- better thresholds for the lane pixel extraction (only the test images were used right now, rather than entire videos)
-- a smarter way of initializing the sliding window search, rather than by just cutting the histogram in half and finding peaks. Maybe we can use the expected width of the road. Say, we are very confident about the right line but we have two options to choose out of for the left line, we could choose the one that appears to be at the appropriate distance.
-- exponential moving average smoothing on polynomial parameters
-- more robust sanity checks
+- The barrier in the middle of the road and shadows cause sharp edges.
+- Different pieces of asphalt in a single lane, causing an edge to be detected.
+- No smoothing.
+- The sanity check for the width of the top of the lane is very sensitive: small mistakes are blown up by the perspective transform, leading to large deviations from the expected 3.7 m.
 
-In general, I would also look into a deep learning. Trying to find optimal thresholds and hyperparameters manually is very time consuming and probably leads to sub optimal results. Minimizing the errors on predictions of lane lines (with respect to annotated ground truth) seems like a more scalable approach to me. 
+If I were to keep working on this, I would try to improve it by working on the following:
 
+- Better thresholds for the lane pixel extraction (only the test images were used right now, rather than entire videos).
+- A smarter way of initializing the sliding window search, rather than by just cutting the histogram in half and finding peaks. Maybe we can use the expected width of the road. Say, we are very confident about the right line but we have two options to choose out of for the left line, we could choose the one that appears to be at the appropriate distance.
+- Exponential moving average smoothing on polynomial parameters.
+- More robust sanity checks.
+
+In general, I would also look into a deep learning approach. Trying to find optimal thresholds and hyperparameters manually is very time consuming and probably leads to sub optimal results. Algorithmically finding hyperparameters such that errors on predictions of lane lines are minimized (with respect to annotated ground truth) seems like a more scalable approach to me.

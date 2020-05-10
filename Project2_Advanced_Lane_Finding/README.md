@@ -1,8 +1,5 @@
-## Writeup
-
----
-
-**Advanced Lane Finding Project**
+Writeup - Advanced Lane Finding Project
+=======================================
 
 The goals / steps of this project are the following:
 
@@ -22,11 +19,34 @@ The goals / steps of this project are the following:
 [image3]: ./test_images_output/steps_straight_lines1.png "Example pipeline straight_lines_1.png"
 [video1]: ./test_videos_output/project_video.mp4 "Video"
 
-## [Rubric](https://review.udacity.com/#!/rubrics/571/view) Points
+# Project overview
+```
+├── README.md                   # This file
+├── adv_lane_finding.ipynb      # Pipeline for images and videos
+├── camera_cal                  # Camera calibration images
+│   └── *.jpg
+├── lib                         # Python modules
+│   ├── __init__.py
+│   ├── camera_calib.py         # Camera calibration code
+│   ├── constants.py            # Various constants that may be used in multiple files
+│   ├── lane_pixel_ops.py       # Lane pixel operations: lane line detection and perspective transform
+│   ├── line.py                 # Lane line, including polynomial fitting
+│   └── road_lane.py            # Road lane, combines the left and right lane line
+├── test_images
+│   └── *.jpg                   # Input test images
+├── test_images_output
+│   └── *.png                   # Procssed test images, showing all pipeline steps
+├── test_videos                 # Input videos
+│   ├── challenge_video.mp4
+│   └── project_video.mp4
+└── test_videos_output          # Pipeline applied on videos, with visualization of drivable space and metrics.
+    ├── challenge_video.mp4
+    └── project_video.mp4
+```
 
-### Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
+# Rubric points
 
----
+Here I will consider the [rubric points](https://review.udacity.com/#!/rubrics/571/view) individually and describe how I addressed each point in my implementation.  
 
 ### Camera Calibration
 

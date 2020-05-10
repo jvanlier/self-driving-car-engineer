@@ -29,7 +29,7 @@ The goals / steps of this project are the following:
 │   ├── __init__.py
 │   ├── camera_calib.py         # Camera calibration code
 │   ├── constants.py            # Various constants that may be used in multiple files
-│   ├── lane_pixel_ops.py       # Lane pixel operations: lane line detection and perspective transform
+│   ├── lane_pixel_ops.py       # Lane line pixel ops: lane line pixel extraction, perspective transform
 │   ├── line.py                 # Lane line, including polynomial fitting
 │   └── road_lane.py            # Road lane, combines the left and right lane line
 ├── test_images
@@ -39,7 +39,7 @@ The goals / steps of this project are the following:
 ├── test_videos                 # Input videos
 │   ├── challenge_video.mp4
 │   └── project_video.mp4
-└── test_videos_output          # Pipeline applied on videos, with visualization of detected lane + metrics
+└── test_videos_output          # Pipeline applied on videos, showing detected lane + metrics
     ├── challenge_video.mp4
     └── project_video.mp4
 ```
@@ -64,7 +64,7 @@ The distortion correction is applied with the `apply()` method, which calls `cv2
 
 ### Pipeline (single images)
 
-Please see these two figures for a demonstration of all steps in the pipeline:
+Please see these two figures for `test1.jpg` and `straight_lines1.jpg` for a demonstration of all steps in the pipeline:
 
 ![alt][image2]
 ![alt][image3]
@@ -77,9 +77,14 @@ See the images with title "Undistorted". The field of view is a bit cropped due 
 
 #### 2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
 
-See the images with title "Lane pixel extraction".
+I used a combination of color and gradient thresholds to generate a binary image. I first converted the image to HLS color space, after which I applied the Sobel operation
+on the L (lightness) channel in the x-direction to calculate gradients. This functions as an edge detector, and the x-direction is better at picking up lane lines (from the front camera perspective) than the y-direction. These gradients, taken absolutely and normalized to range 0 - 255, are then thresholded between 40 and 140. As a result, any value within the threshold is set to 1, while the remainder is set to 0.
 
-I used a combination of color and gradient thresholds to generate a binary image (thresholding steps at lines 29 through 47 in `lib/lane_pixel_ops.py`). 
+This is combined with a simple color threshold on the S (saturation) channel. The S channel picks up lane lines very well by itself and by settng the threshold to 155 - 255, I make sure that the lane itself (the gray/black-ish asphalt) is not picked up, while the lane lines are. The result is binarized in the same way as above. The two detectors are combined using an "OR" operation: if the pixel is activated in either detector (or in both), it is also activated in the result.
+
+In both cases, the thresholds were picked empirically by trying different values and comparing the results on the provided test images, with the goal of picking up as much as possible of the lane lines, without triggering on other things such as color changes in the pavement and shadows.
+
+For an examples, see the images with title "Lane pixel extraction" in the examples above.  The corresponding code can be found in `lib/lane_pixel_ops.py`, lines 29 through 47.
 
 #### 3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
 

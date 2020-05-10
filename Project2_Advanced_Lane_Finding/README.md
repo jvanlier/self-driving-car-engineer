@@ -39,7 +39,7 @@ The goals / steps of this project are the following:
 ├── test_videos                 # Input videos
 │   ├── challenge_video.mp4
 │   └── project_video.mp4
-└── test_videos_output          # Pipeline applied on videos, with visualization of drivable space and metrics.
+└── test_videos_output          # Pipeline applied on videos, with visualization of detected lane + metrics
     ├── challenge_video.mp4
     └── project_video.mp4
 ```

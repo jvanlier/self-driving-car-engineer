@@ -6,6 +6,10 @@ import cv2
 import matplotlib.pyplot as plt
 
 
+GRID_X = 9
+GRID_Y = 6
+
+
 class Undistorter:
     def __init__(self, img_shape: Tuple[int, int]):
         self.img_shape = img_shape
@@ -33,8 +37,8 @@ class Undistorter:
                                        draw: bool) -> \
             Tuple[np.ndarray, np.ndarray]:
         # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
-        objp = np.zeros((6 * 9, 3), np.float32)
-        objp[:, :2] = np.mgrid[0:9, 0:6].T.reshape(-1, 2)
+        objp = np.zeros((GRID_Y * GRID_X, 3), np.float32)
+        objp[:, :2] = np.mgrid[0:GRID_X, 0:GRID_Y].T.reshape(-1, 2)
 
         # Arrays to store object points and image points from all the images.
         objpoints = []  # 3d points in real world space
@@ -46,7 +50,7 @@ class Undistorter:
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
             # Find the chessboard corners
-            ret, corners = cv2.findChessboardCorners(gray, (9, 6), None)
+            ret, corners = cv2.findChessboardCorners(gray, (GRID_X, GRID_Y), None)
 
             # If found, add object points, image points
             if ret:
@@ -54,7 +58,7 @@ class Undistorter:
                 imgpoints.append(corners)
 
                 if draw:
-                    img = cv2.drawChessboardCorners(img, (9, 6), corners, ret)
+                    img = cv2.drawChessboardCorners(img, (GRID_X, GRID_Y), corners, ret)
                     plt.title(fname.name)
                     plt.imshow(img)
                     plt.show()

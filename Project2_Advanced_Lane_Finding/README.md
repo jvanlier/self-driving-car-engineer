@@ -35,7 +35,8 @@ The goals / steps of this project are the following:
 ├── test_images
 │   └── *.jpg                   # Input test images
 ├── test_images_output
-│   └── *.png                   # Procssed test images, showing all pipeline steps
+│   ├── example_distortion-corrected.png 
+│   └── steps_*.png             # Processed test images, showing all pipeline steps.
 ├── test_videos                 # Input videos
 │   ├── challenge_video.mp4
 │   └── project_video.mp4
@@ -137,11 +138,11 @@ To convert to meters, we need scale factors `XM_PER_PIX` and `YM_PER_PIX` (see `
 This happens in lines 176 to 182 in `lib/line.py`.
 
 ##### Compute Radius of Curvature
-I calculated radius of curvature separately for each lane line first, and then averaged. 
+I calculated radius of curvature separately for each lane line first, and then averaged the results. 
 
 Radius of curvature in meters is computed in lines 164 through 170 in `lib/line.py` by using [the standard formula](https://en.wikipedia.org/wiki/Radius_of_curvature#Definition), plugging in the converted polomial coefficients.
 
-The overall radius of curvature is a mean of these two, calculated in `lib/road_lane.py`, lines 23 through 29. Thhe `RoadLane` class defined in this file encapsulates the two lane lines and does overarching calculations that involve both lines.
+The overall radius of curvature is a mean of these two, calculated in `lib/road_lane.py`, lines 23 through 29. Thhe `RoadLane` class defined in this file encapsulates the two lane lines in order to do overarching calculations that involve both lines.
 
 ##### Compute relative position of vehicle
 

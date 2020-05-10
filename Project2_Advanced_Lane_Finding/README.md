@@ -80,11 +80,11 @@ See the images with title "Undistorted". The field of view is a bit cropped due 
 I used a combination of color and gradient thresholds to generate a binary image. I first converted the image to HLS color space, after which I applied the Sobel operation
 on the L (lightness) channel in the x-direction to calculate gradients. This functions as an edge detector, and the x-direction is better at picking up lane lines (from the front camera perspective) than the y-direction. These gradients, taken absolutely and normalized to range 0 - 255, are then thresholded between 40 and 140. As a result, any value within the threshold is set to 1, while the remainder is set to 0.
 
-This is combined with a simple color threshold on the S (saturation) channel. The S channel picks up lane lines very well by itself and by settng the threshold to 155 - 255, I make sure that the lane itself (the gray/black-ish asphalt) is not picked up, while the lane lines are. The result is binarized in the same way as above. The two detectors are combined using an "OR" operation: if the pixel is activated in either detector (or in both), it is also activated in the result.
+The Sobel operation does not work very well in shaded areas, because gradients here are less pronounced. To compensate for this, I also use a simple color threshold on the S (saturation) channel. The S channel picks up lane lines very well by itself (espeically yellow) and by settng the threshold to 155 - 255, I make sure that the lane itself (the gray/black-ish asphalt) is not picked up, while the lane lines are. The result is binarized in the same way as above. The two detectors are combined using an "OR" operation: if the pixel is activated in either detector (or in both), it is also activated in the result.
 
-In both cases, the thresholds were picked empirically by trying different values and comparing the results on the provided test images, with the goal of picking up as much as possible of the lane lines, without triggering on other things such as color changes in the pavement and shadows.
+In both cases, the thresholds were picked empirically by trying different values and visually comparing the results on the provided test images, with the goal of picking up as much as possible of the lane lines, without triggering on other things such as color changes in the pavement and shadows.
 
-For an examples, see the images with title "Lane pixel extraction" in the examples above.  The corresponding code can be found in `lib/lane_pixel_ops.py`, lines 29 through 47.
+For an example, see the images with title "Lane pixel extraction" in the examples above. The corresponding code can be found in `lib/lane_pixel_ops.py`, lines 29 through 47.
 
 #### 3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
 
@@ -120,11 +120,46 @@ See the yellow line in the figures above on the second row, separately for left 
 
 #### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
-I calculated radius of curvature separately for each lane line in lines 164 through 170 in my code in `lib/line.py`
+##### Convert polyomial coefficients to meter
 
-The overall radius of curvature is a mean of these two, calculated in `lib/road_lane.py`, lines 23 through 29. This class encapsulates the two lane lines and does overarching calculations that involve both lines.
+Consider the following polynomial formula, where `A`, `B` and `C` are coefficients found prevously in the fitting procedure:
 
-The relative position of the vehicle is also calculated in the `lib/road_lane.py` file, lines 32 through 47.
+	x = A y^2 + B y + C
+
+Here, `x` and `y` are espressed in pixels.
+
+To convert to meters, we need scale factors `XM_PER_PIX` and `YM_PER_PIX` (see `lib/constants.py`), which define, for the warped space, how many meters per pixel there are in the x direction and the y direction respectively. With these, the polyomial coefficients can be converted:
+
+	A' = A * XM_PER_PIX / YM_PER_PIX^2
+	B' = B * XM_PER_PIX / YM_PER_PIX
+	C' = C
+
+This happens in lines 176 to 182 in `lib/line.py`.
+
+##### Compute Radius of Curvature
+I calculated radius of curvature separately for each lane line first, and then averaged. 
+
+Radius of curvature in meters is computed in lines 164 through 170 in `lib/line.py` by using [the standard formula](https://en.wikipedia.org/wiki/Radius_of_curvature#Definition), plugging in the converted polomial coefficients.
+
+The overall radius of curvature is a mean of these two, calculated in `lib/road_lane.py`, lines 23 through 29. Thhe `RoadLane` class defined in this file encapsulates the two lane lines and does overarching calculations that involve both lines.
+
+##### Compute relative position of vehicle
+
+The relative position of the vehicle is calculated in the `lib/road_lane.py` file, lines 32 through 47.
+
+I assume that the camera is mounted in the exact middle of the car.
+
+I evaluate the polomials on `y = 719`, yielding x-values for each polonomial (using the original parameters in pixel space). This is the position of the lane line that is closest to the vehicle, which should be the most accurate estimate.
+
+If the car is driving in the middle of the lane, the x coordinate for the middle of the image should agree with the x coordinate exactly in between the two lane lines. The deviation is calculated as follows:
+
+	car_deviation_center = car_pos_x - self.x_middle 
+
+With `car_pos_x` being the x-coordinate in the middle of the two lane lines and`self.x_middle` being the middle of the image.
+
+If the value is positive, the car is a bit too far too the right. If negative, it is a bit too far to the left.
+
+Finally, this value is multiplied with `XM_PER_PIX` in order to report the deviation in meters rather than pixels.
 
 #### 6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
 
@@ -144,6 +179,7 @@ For the video pipeline, I implemented:
 - searching from a prior (see `lib/line.py` lines 147 to 161, and `lib/road_lane.py` lines 49 to 84)
 - sanity checks that verify the width of the lane in the top and the bottom (see `lib/road_lane.py` lines 86 to 100)
 - A reset after 25 frames if it failes to recover.
+- Side-by-side view with the binary warped image.
 
 Here's a [link to my video result](./test_videos_output/project_video.mp4)
 

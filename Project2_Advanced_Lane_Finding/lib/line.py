@@ -162,12 +162,12 @@ class Line:
 
     @property
     def radius_of_curvature(self):
-        """Radius of curvature in real-world kilometers."""
+        """Radius of curvature in real-world meters."""
         numerator = (
             1 + (2 * self.params_meter[0] +
                  self.params_meter[1]) ** 2) ** 1.5
         denom = np.abs(2 * self.params_meter[0])
-        return (numerator / denom) / 1000
+        return numerator / denom
 
     @property
     def params(self):

@@ -81,7 +81,7 @@ See the images with title "Undistorted". The field of view is a bit cropped due 
 I used a combination of color and gradient thresholds to generate a binary image. I first converted the image to HLS color space, after which I applied the Sobel operation
 on the L (lightness) channel in the x-direction to calculate gradients. This functions as an edge detector, and the x-direction is better at picking up lane lines (from the front camera perspective) than the y-direction. These gradients, taken absolutely and normalized to range 0 - 255, are then thresholded between 40 and 140. As a result, any value within the threshold is set to 1, while the remainder is set to 0.
 
-The Sobel operation does not work very well in shaded areas, because gradients here are less pronounced. To compensate for this, I also use a simple color threshold on the S (saturation) channel. The S channel picks up lane lines very well by itself (especially yellow) and by settng the threshold to 155 - 255, I make sure that the lane itself (the gray/black-ish asphalt) is not picked up, while the lane lines are. The result is binarized in the same way as above. The two detectors are combined using an "OR" operation: if the pixel is activated in either detector (or in both), it is also activated in the result.
+The Sobel operation does not work very well in shaded areas, because gradients here are less pronounced. To compensate for this, I also use a simple color threshold on the S (saturation) channel. The S channel picks up lane lines very well by itself (especially yellow) and by settng the threshold relatively high to 155 - 255, I make sure that the lane itself (the gray/black-ish asphalt) is not picked up, while the lane lines are. The result is binarized in the same way as above. The two detectors are combined using an "OR" operation: if the pixel is activated in either detector (or in both), it is also activated in the result.
 
 In both cases, the thresholds were picked empirically by trying different values and visually comparing the results on the provided test images, with the goal of picking up as much as possible of the lane lines, without triggering on other things such as color changes in the pavement and shadows.
 
@@ -123,7 +123,7 @@ See the yellow line in the figures above on the second row, separately for left 
 
 ##### Convert polyomial coefficients to meter
 
-Consider the following polynomial formula, where `A`, `B` and `C` are coefficients found prevously in the fitting procedure:
+Consider the following polynomial formula, where `A`, `B` and `C` are coefficients found previously in the fitting procedure:
 
 	x = A y^2 + B y + C
 
@@ -142,7 +142,7 @@ I calculated radius of curvature separately for each lane line first, and then a
 
 Radius of curvature in meters is computed in lines 164 through 170 in `lib/line.py` by using [the standard formula](https://en.wikipedia.org/wiki/Radius_of_curvature#Definition), plugging in the converted polomial coefficients.
 
-The overall radius of curvature is a mean of these two, calculated in `lib/road_lane.py`, lines 23 through 29. Thhe `RoadLane` class defined in this file encapsulates the two lane lines in order to do overarching calculations that involve both lines.
+The overall radius of curvature is a mean of these two, calculated in `lib/road_lane.py`, lines 23 through 29. The `RoadLane` class defined in this file encapsulates the two lane lines in order to do overarching calculations that involve both lines.
 
 ##### Compute relative position of vehicle
 

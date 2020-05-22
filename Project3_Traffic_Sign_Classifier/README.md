@@ -77,29 +77,31 @@ My final model consisted of the following layers:
 |:---------------------:|:---------------------------------------------:| 
 | Input         		| 32x32x3 RGB image   							| 
 | Convolution 5x5     	| 1x1 stride, valid padding, outputs 28x28x6 	|
-| RELU					|												|
+| ReLU					|												|
 | Max pooling 2x2	      	| 2x2 stride,  outputs 14x14x6 				|
 | Convolution 5x5	    | 1x1 stride, valid padding, outputs 10x10x16      									|
-| RELU					|												|
+| ReLU					|												|
 | Max pooling 2x2	      	| 2x2 stride,  outputs 5x5x16 				|
 | Flatten						| Outputs 400												|
 | Fully connected		| Outputs 120        									|
-| RELU					|												|
+| ReLU					|												|
+| Dropout				| rate = 0.5												|
 | Fully connected		| Outputs 84        									|
+| ReLU					|												|
 | Dropout				| rate = 0.5												|
-| RELU					|												|
 | Fully connected		| Outputs 43        									|
-| Dropout				| rate = 0.5												|
 | Softmax				| (Technically not part of the model as it output Logits)        									|
 
 
 #### 3. Describe how you trained your model. The discussion can include the type of optimizer, the batch size, number of epochs and any hyperparameters such as learning rate.
 
-To train the model, I used the cross entropy loss function. The Adam optimizer was used with LR = 0.0003; the default of 0.001 seemed a bit too high, especially from epoch 20 onward (could also have dropped the LR later at this point for slighly faster training, or continuously using a decay, but again: that wasn't needed to reach a good score and it trained sufficiently fast on a K80). The betas for Momentum/RMSProp remained at the defaults.
+To train the model, I used the cross entropy loss function. The Adam optimizer was used with LR = 0.0003. I initially used 0.001 as used in the course, but this seemd a bit too high: loss was quite jittery after about 10-20 epochs. Alternatively, I could also have dropped the LR at this point, or continuously using a decay, but again: that wasn't needed to reach a good score and it trained sufficiently fast on a K80 with LR = 0.0003. The betas for Momentum/RMSProp remained at the defaults.
 
 I left batch size at the default of 128. This could have gone a bit higher (enough memory on a 12 GB K80), but 128 is already quite high and I don't want to remove even more stochasticity from the optimization process.
 
-I found empirically that training for 40 epochs was about right. The validation loss was pleateauing at this point, but train loss was still improving. I could probably have trained little longer, but overfitting was looming since the gap between train and test loss was increasing.
+I found empirically that training for approx. 30 epochs was about right. The validation loss was pleateauing at this point, but train loss was still improving. Training longer results in overfitting: train loss keeps on going down but valid loss goes up.
+
+I ended up taking the model checkpoint at epoch 26, but have trained it until 40.
 
 Loss and accuracy per epoch:
 
@@ -110,8 +112,8 @@ Loss and accuracy per epoch:
 My final model results were:
 
 * training set accuracy of .998
-* validation set accuracy of .954
-* test set accuracy of .936
+* validation set accuracy of .961
+* test set accuracy of .942
 
 I based my implementation on the LeNet network we covered in class, as suggested in the project instructions. It is a pretty simple and shallow CNN, but traffic signs are also quite simple. This made me believe that it could be a good fit for traffic signs. We don't need to be able to detect very complicated textures or patterns. In addition, a simple/shallow neural net like this would also be actually implementable in a car for real-time predictions (in contrary to a heavy ResNet152, for instance).
 
@@ -121,7 +123,7 @@ The changes I made are the following:
 - Added dropout to the two fully connected layers at the end. I noticed a bit of overfitting and this compensates for that nicely.
 - Changed the 10 hardcoded output classes to `n_classes`
 
-The training accuracy is very high, meaning that the model has the capacity to detect (or at least: memorize) these traffic signs very well. The validation score is a bit lower, meaining that it could generalize to unseen data a bit better. I believe that adding more training data or augmented training data could help in this aspect. The test score is a bit lower than the valid score, which makes sense, because the valid score informed some architectural and hyperparameter choices (e.g. dropout rate) during development of the model. The test score of .936 seems still a bit too low to me for real-life deployments, and I would recommend a bit more work on this before continuing to production stage.
+The training accuracy is very high, meaning that the model has the capacity to detect (or at least: memorize) these traffic signs very well. The validation score is a bit lower, meaining that it could generalize to unseen data a bit better. I believe that adding more training data or augmented training data could help in this aspect. The test score is a bit lower than the valid score, which makes sense, because the valid score informed some architectural and hyperparameter choices (e.g. dropout rate) during development of the model. The test score of .942 seems still a bit too low to me for real-life deployments, and I would recommend a bit more work on this before continuing to production stage.
  
 ### Test a Model on New Images
 
@@ -132,7 +134,7 @@ Here are six German traffic signs that I found on the web:
 ![alt text][web1] ![alt text][web2] ![alt text][web3] 
 ![alt text][web4] ![alt text][web5] ![alt text][web6]
 
-As I realized later, the 30 km zone signs and the play area sign are not in the dataset. Still, it is interesting to see how the model handles these.
+As I realized later, the 30 km zone signs and the play area sign are not in the dataset. Still, it is interesting to see how the model handles these. I expect no problems for the remainder, but I did zoom in the third image a bit ("End of all speed and passing limits")  because it's quite far away compared to the training data.
 
 #### 2. Discuss the model's predictions on these new traffic signs and compare the results to predicting on the test set. At a minimum, discuss what the predictions were, the accuracy on these new predictions, and compare the accuracy to the accuracy on the test set (OPTIONAL: Discuss the results in more detail as described in the "Stand Out Suggestions" part of the rubric).
 

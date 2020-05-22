@@ -15,6 +15,7 @@ The goals / steps of this project are the following:
 [image1]: ./examples/sign-distribution.png "Sign Distribution"
 [image2]: ./examples/random-signs.png "Random signs"
 [image3]: ./examples/train-log.png "Training log"
+[image4]: ./examples/web-preds.png "Web image predictions"
 
 [web1]: ./data/web-images/30kmzone-end.jpg "web image 1"
 [web2]: ./data/web-images/30kmzone.jpg "web image 2"
@@ -140,7 +141,7 @@ As I realized later, the 30 km zone signs and the play area sign are not in the 
 
 Here are the results of the prediction:
 
-![examples/web-pred.png]
+![alt text][image4]
 
 The model was able to predict 3 out of 6 traffic signs correctly, an accuracy of 50%.
 

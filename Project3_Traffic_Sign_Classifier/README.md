@@ -145,7 +145,7 @@ Here are the results of the prediction:
 
 The model was able to predict 3 out of 6 traffic signs correctly, an accuracy of 50%.
 
-However taking into account that 3 of these traffic signs don't even exist in the training dataset, the accuracy on the ones that it knows is 3/3 = 100%.
+However, taking into account that 3 of these traffic signs don't even exist in the training dataset, the accuracy on the ones that it knows is 3/3 = 100%.
 Curiously, it almost got the "End of 30 km zone" sign right. This is probably due to the gray diagonal lines.
 
 Of course, no conclusions can be drawn on a sample of 3 or 6.

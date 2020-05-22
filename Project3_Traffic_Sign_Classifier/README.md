@@ -196,7 +196,7 @@ For the play area sign - also not in the original dataset - a totally different 
 |        15 | No vehicles          | 2.94031e-05 |
 |        37 | Go straight or left  | 1.86616e-05 |
 
-Finally two very good predictions for signs that are actually in the dataset: yield and priority, respecitvely:
+Finally two very good predictions for signs that are actually in the dataset: yield and priority, respectively:
 
 |   ClassId | SignName                                           |        prob |
 |----------:|:---------------------------------------------------|------------:|

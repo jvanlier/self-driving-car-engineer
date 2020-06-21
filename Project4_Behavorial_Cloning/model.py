@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from pathlib import Path
 
 import numpy as np
@@ -6,10 +7,25 @@ import tensorflow as tf
 import tensorflow.keras.layers as layers
 from imageio import imread
 from sklearn.utils import shuffle
+import click
 
 
 DATA_PATH = Path("~/data/udacity-project4-sim-data").expanduser()
 BATCH_SIZE = 128
+
+
+def _determine_model_path(model_id):
+    model_path = None
+    for i in range(1, 100):
+        model_path_candidate = Path("models") / f"{model_id}{i:02d}"
+        if not model_path_candidate.exists():
+            model_path = model_path_candidate
+            model_path.mkdir(parents=True)
+            print(f"Storing results in {model_path}")
+            break
+    if not model_path:
+        raise NotADirectoryError(f"Unable to determine directory for model {model_id}")
+    return model_path
 
 
 def _load_csvs(data_path):
@@ -59,31 +75,42 @@ def _build_model(img_shape, *, learning_rate, dropout):
     return model
 
 
-def _fit(model, imgs, angles):
+def _fit(model, imgs, angles, model_path: Path, *, epochs):
     # validation_split in fit() picks from the end of the array by default, so shuffle first to get
     # a random split:
     imgs, angles = shuffle(imgs, angles)
 
     early_stop = tf.keras.callbacks.EarlyStopping(verbose=1, patience=3)
-    #save_ckpt = tf.keras.callbacks.ModelCheckpoint(
-    #   str((save_dir / "model.{epoch:02d}-{val_loss:.2f}.hdf5")),
-    #    verbose=1
-    #)
+    save_ckpt = tf.keras.callbacks.ModelCheckpoint(
+        str((model_path / "model.{epoch:02d}-{val_loss:.2f}.hdf5")),
+        verbose=1
+    )
 
-    model.fit(imgs, angles, batch_size=BATCH_SIZE, epochs=20, validation_split=.2,
+    model.fit(imgs, angles, batch_size=BATCH_SIZE, epochs=epochs, validation_split=.2,
               callbacks=[
                   early_stop,
-              #    save_ckpt
+                  save_ckpt
               ])
 
 
-def main():
+@click.command()
+@click.option("--epochs", default=30,
+              help="Maximum number of epochs to train for (unless early stop gets triggered).")
+@click.option("--lr", default=1e-3, help="Learning rate.")
+@click.option("--dropout", default=.5, help="Dropout rate (fraction of units to drop).")
+def main(epochs, lr, dropout):
+    model_id_prefix = f"model_maxepochs-{epochs}_lr-{lr}_dropout-{dropout}_v"
+    model_path = _determine_model_path(model_id_prefix)
+    # model_id is the same as model_id_prefix, but with double-digit version number, e.g. v01 - v99 suffix:
+    model_id = model_path.name
+    print(f"Model id is {model_id}")
+
     data_idx = _load_csvs(DATA_PATH)
     imgs = _load_images(data_idx)
     angles = data_idx["steering_angle"].values
 
-    model = _build_model(imgs.shape[1:], learning_rate=1e-3, dropout=.5)
-    _fit(model, imgs, angles)
+    model = _build_model(imgs.shape[1:], learning_rate=lr, dropout=dropout)
+    _fit(model, imgs, angles, model_path, epochs=epochs)
 
 
 if __name__ == "__main__":

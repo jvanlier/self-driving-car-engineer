@@ -5,9 +5,11 @@ import pandas as pd
 import tensorflow as tf
 import tensorflow.keras.layers as layers
 from imageio import imread
+from sklearn.utils import shuffle
 
 
 DATA_PATH = Path("~/data/udacity-project4-sim-data").expanduser()
+BATCH_SIZE = 128
 
 
 def _load_csvs(data_path):
@@ -31,9 +33,9 @@ def _load_images(data_idx):
     return imgs
 
 
-def _build_model(img_shape):
+def _build_model(img_shape, *, learning_rate, dropout):
     model = tf.keras.Sequential()
-    model.add(layers.Lambda(lambda x: (x / 255.0) - 0.5, input_shape=img_shape))
+    model.add(layers.Lambda(lambda x: (x / 128.) - 0.5, input_shape=img_shape))
 
     pretrained_net = tf.keras.applications.MobileNetV2(
         include_top=False,
@@ -42,11 +44,14 @@ def _build_model(img_shape):
     )
     model.add(pretrained_net)
     # model.add(layers.Dense(128, activation="relu"))
-    model.add(layers.Dense(1, activation="relu"))
+    model.add(layers.Dropout(dropout))
+
+    # No activation function:
+    model.add(layers.Dense(1))
 
     # print(model.summary())
     model.compile(
-        optimizer=tf.keras.optimizers.Adam(lr=1e-3),
+        optimizer=tf.keras.optimizers.Adam(lr=learning_rate),
         loss=tf.keras.losses.mean_squared_error,
         metrics=[]
     )
@@ -55,7 +60,21 @@ def _build_model(img_shape):
 
 
 def _fit(model, imgs, angles):
-    history = model.fit(imgs, angles, batch_size=128, epochs=10)
+    # validation_split in fit() picks from the end of the array by default, so shuffle first to get
+    # a random split:
+    imgs, angles = shuffle(imgs, angles)
+
+    early_stop = tf.keras.callbacks.EarlyStopping(verbose=1, patience=3)
+    #save_ckpt = tf.keras.callbacks.ModelCheckpoint(
+    #   str((save_dir / "model.{epoch:02d}-{val_loss:.2f}.hdf5")),
+    #    verbose=1
+    #)
+
+    model.fit(imgs, angles, batch_size=BATCH_SIZE, epochs=20, validation_split=.2,
+              callbacks=[
+                  early_stop,
+              #    save_ckpt
+              ])
 
 
 def main():
@@ -63,10 +82,7 @@ def main():
     imgs = _load_images(data_idx)
     angles = data_idx["steering_angle"].values
 
-    # imgs.shape: (4600, 160, 320, 3)
-    # angles.shape: (4600, )
-
-    model = _build_model(imgs.shape[1:])
+    model = _build_model(imgs.shape[1:], learning_rate=1e-3, dropout=.5)
     _fit(model, imgs, angles)
 
 

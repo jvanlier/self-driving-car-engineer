@@ -3,6 +3,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+import tensorflow.keras.layers as layers
 from imageio import imread
 
 
@@ -31,19 +32,30 @@ def _load_images(data_idx):
 
 
 def _build_model(img_shape):
-    model = tf.keras.applications.NASNetMobile(
-        #input_shape=img_shape,
-        # I think img_shape should work as input size, but it doesn't - not sure why.
-        input_shape=(224, 224, 3),
+    model = tf.keras.Sequential()
+    model.add(layers.Lambda(lambda x: (x / 255.0) - 0.5, input_shape=img_shape))
+
+    pretrained_net = tf.keras.applications.MobileNetV2(
         include_top=False,
         weights="imagenet",
-        pooling="avg",
+        pooling="avg",  # This applies AveragePooling at the end to flatten outputk.
     )
-    # Shape now is (None, 1056), so 2D (first dim is batch size) 
-    print(model.summary())
+    model.add(pretrained_net)
+    # model.add(layers.Dense(128, activation="relu"))
+    model.add(layers.Dense(1, activation="relu"))
 
-    #l = tf.keras.layers
-    #model.add(l.
+    # print(model.summary())
+    model.compile(
+        optimizer=tf.keras.optimizers.Adam(lr=1e-3),
+        loss=tf.keras.losses.mean_squared_error,
+        metrics=[]
+    )
+
+    return model
+
+
+def _fit(model, imgs, angles):
+    history = model.fit(imgs, angles, batch_size=128, epochs=10)
 
 
 def main():
@@ -54,7 +66,8 @@ def main():
     # imgs.shape: (4600, 160, 320, 3)
     # angles.shape: (4600, )
 
-    _build_model(imgs.shape[1:])
+    model = _build_model(imgs.shape[1:])
+    _fit(model, imgs, angles)
 
 
 if __name__ == "__main__":

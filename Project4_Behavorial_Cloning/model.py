@@ -78,18 +78,25 @@ def _build_model(img_shape, *, learning_rate, dropout):
 def _fit(model, imgs, angles, model_path: Path, *, epochs):
     # validation_split in fit() picks from the end of the array by default, so shuffle first to get
     # a random split:
-    imgs, angles = shuffle(imgs, angles)
+    imgs, angles = shuffle(imgs, angles, random_state=42)
 
-    early_stop = tf.keras.callbacks.EarlyStopping(verbose=1, patience=3)
     save_ckpt = tf.keras.callbacks.ModelCheckpoint(
         str((model_path / "model.{epoch:02d}-{val_loss:.4f}.hdf5")),
         save_best_only=True,
         verbose=1
     )
+    reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(
+        factor=.2,
+        patience=5,
+        verbose=1,
+        min_lr=4e-5  # Allows for 2 drops when starting with 1e-3 and factor = .2
+    )
+    early_stop = tf.keras.callbacks.EarlyStopping(verbose=1, patience=10)
 
     model.fit(imgs, angles, batch_size=BATCH_SIZE, epochs=epochs, validation_split=.2,
               callbacks=[
                   early_stop,
+                  reduce_lr,
                   save_ckpt
               ])
 

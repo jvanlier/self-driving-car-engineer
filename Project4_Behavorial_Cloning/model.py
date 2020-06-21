@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 from pathlib import Path
 
+import click
+from imageio import imread
+import mlflow
+from mlflow.tensorflow import autolog
 import numpy as np
 import pandas as pd
+from sklearn.utils import shuffle
 import tensorflow as tf
 import tensorflow.keras.layers as layers
-from imageio import imread
-from sklearn.utils import shuffle
-import click
 
 
 DATA_PATH = Path("~/data/udacity-project4-sim-data").expanduser()
@@ -91,7 +93,11 @@ def _fit(model, imgs, angles, model_path: Path, *, epochs):
         verbose=1,
         min_lr=4e-5  # Allows for 2 drops when starting with 1e-3 and factor = .2
     )
-    early_stop = tf.keras.callbacks.EarlyStopping(verbose=1, patience=10)
+    early_stop = tf.keras.callbacks.EarlyStopping(
+        verbose=1,
+        patience=10,
+        restore_best_weights=True  # Causes MLflow to log metrics of restored (best) model.
+    )
 
     model.fit(imgs, angles, batch_size=BATCH_SIZE, epochs=epochs, validation_split=.2,
               callbacks=[
@@ -102,14 +108,15 @@ def _fit(model, imgs, angles, model_path: Path, *, epochs):
 
 
 @click.command()
-@click.option("--epochs", default=30,
+@click.option("--epochs", default=50,
               help="Maximum number of epochs to train for (unless early stop gets triggered).")
 @click.option("--lr", default=1e-3, help="Learning rate.")
 @click.option("--dropout", default=.5, help="Dropout rate (fraction of units to drop).")
 def main(epochs, lr, dropout):
     model_id_prefix = f"model_maxepochs-{epochs}_lr-{lr}_dropout-{dropout}_v"
     model_path = _determine_model_path(model_id_prefix)
-    # model_id is the same as model_id_prefix, but with double-digit version number, e.g. v01 - v99 suffix:
+    # model_id is the same as model_id_prefix, but with double-digit version number, e.g. v01 - v99
+    # suffix:
     model_id = model_path.name
     print(f"Model id is {model_id}")
 
@@ -117,8 +124,14 @@ def main(epochs, lr, dropout):
     imgs = _load_images(data_idx)
     angles = data_idx["steering_angle"].values
 
+    # mlflow.set_tracking_uri("file://{}
+    mlflow.start_run(run_name=model_id)
+    autolog()
+
     model = _build_model(imgs.shape[1:], learning_rate=lr, dropout=dropout)
     _fit(model, imgs, angles, model_path, epochs=epochs)
+
+    mlflow.end_run()
 
 
 if __name__ == "__main__":

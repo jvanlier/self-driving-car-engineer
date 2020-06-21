@@ -82,7 +82,8 @@ def _fit(model, imgs, angles, model_path: Path, *, epochs):
 
     early_stop = tf.keras.callbacks.EarlyStopping(verbose=1, patience=3)
     save_ckpt = tf.keras.callbacks.ModelCheckpoint(
-        str((model_path / "model.{epoch:02d}-{val_loss:.2f}.hdf5")),
+        str((model_path / "model.{epoch:02d}-{val_loss:.4f}.hdf5")),
+        save_best_only=True,
         verbose=1
     )
 

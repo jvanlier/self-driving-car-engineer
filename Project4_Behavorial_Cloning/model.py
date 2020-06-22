@@ -77,7 +77,7 @@ def _build_model(img_shape, *, learning_rate, dropout):
     return model
 
 
-def _fit(model, imgs, angles, model_path: Path, *, epochs):
+def _fit(model, imgs, angles, model_path: Path, *, epochs, lr_start):
     # validation_split in fit() picks from the end of the array by default, so shuffle first to get
     # a random split:
     imgs, angles = shuffle(imgs, angles, random_state=42)
@@ -87,16 +87,28 @@ def _fit(model, imgs, angles, model_path: Path, *, epochs):
         save_best_only=True,
         verbose=1
     )
+
+    factor = .1
     reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(
-        factor=.2,
-        patience=5,
+        factor=.1,
+        patience=4,
         verbose=1,
-        min_lr=4e-5  # Allows for 2 drops when starting with 1e-3 and factor = .2
+        min_lr=lr_start * factor ** 2   # Allows for 2 drops
     )
     early_stop = tf.keras.callbacks.EarlyStopping(
         verbose=1,
-        patience=10,
+        patience=8,
         restore_best_weights=True  # Causes MLflow to log metrics of restored (best) model.
+        # FIXME: this only works in case early stopping is indeed triggered.
+        # If it isn't, MLFlow's log seems to be completely unreliable. I've seen it log the 2nd
+        # epoch for a 100 epoch run, where the 2nd was quite bad, but a bit beter than the first,
+        # but still much worse than later epochs. No idea why it would choose to do that...
+        #
+        # Workaround: call fit with a very high # of epochs.
+        #
+        # Possibly better workaround: use ModelCheckpoint instead, with save_best_only, and 
+        # *always* load that after the fit. But that might require explict logging rather than
+        # autolog.
     )
 
     model.fit(imgs, angles, batch_size=BATCH_SIZE, epochs=epochs, validation_split=.2,
@@ -108,10 +120,10 @@ def _fit(model, imgs, angles, model_path: Path, *, epochs):
 
 
 @click.command()
-@click.option("--epochs", default=50,
+@click.option("--epochs", default=150,
               help="Maximum number of epochs to train for (unless early stop gets triggered).")
 @click.option("--lr", default=1e-3, help="Learning rate.")
-@click.option("--dropout", default=.5, help="Dropout rate (fraction of units to drop).")
+@click.option("--dropout", default=.3, help="Dropout rate (fraction of units to drop).")
 def main(epochs, lr, dropout):
     model_id_prefix = f"model_maxepochs-{epochs}_lr-{lr}_dropout-{dropout}_v"
     model_path = _determine_model_path(model_id_prefix)
@@ -124,12 +136,11 @@ def main(epochs, lr, dropout):
     imgs = _load_images(data_idx)
     angles = data_idx["steering_angle"].values
 
-    # mlflow.set_tracking_uri("file://{}
     mlflow.start_run(run_name=model_id)
     autolog()
 
     model = _build_model(imgs.shape[1:], learning_rate=lr, dropout=dropout)
-    _fit(model, imgs, angles, model_path, epochs=epochs)
+    _fit(model, imgs, angles, model_path, epochs=epochs, lr_start=lr)
 
     mlflow.end_run()
 

@@ -1,13 +1,19 @@
 #!/usr/bin/env /bin/bash
 # Train many models in order to compare results later in MLflow
-./model.py --epochs 200 --lr 0.01   --dropout 0.5
-./model.py --epochs 200 --lr 0.001  --dropout 0.5
-./model.py --epochs 200 --lr 0.0001 --dropout 0.5
 
-./model.py --epochs 200 --lr 0.01   --dropout 0.3
-./model.py --epochs 200 --lr 0.001  --dropout 0.3
-./model.py --epochs 200 --lr 0.0001 --dropout 0.3
+# File updated for experiment 2, commented the configurations
+# which were in the worst 50% in experiment 1.
+EXPERIMENT="v3_mae_crop"
+set -exu
 
-./model.py --epochs 200 --lr 0.01   --dropout 0.7
-./model.py --epochs 200 --lr 0.001  --dropout 0.7
-./model.py --epochs 200 --lr 0.0001 --dropout 0.7
+./model.py --exp ${EXPERIMENT} --epochs 200 --lr 0.01   --dropout 0.5
+./model.py --exp ${EXPERIMENT} --epochs 200 --lr 0.001  --dropout 0.5
+./model.py --exp ${EXPERIMENT} --epochs 200 --lr 0.0001 --dropout 0.5
+
+./model.py --exp ${EXPERIMENT} --epochs 200 --lr 0.01   --dropout 0.3
+./model.py --exp ${EXPERIMENT} --epochs 200 --lr 0.001  --dropout 0.3
+./model.py --exp ${EXPERIMENT} --epochs 200 --lr 0.0001 --dropout 0.3
+
+./model.py --exp ${EXPERIMENT} --epochs 200 --lr 0.01   --dropout 0.7
+./model.py --exp ${EXPERIMENT} --epochs 200 --lr 0.001  --dropout 0.7
+./model.py --exp ${EXPERIMENT} --epochs 200 --lr 0.0001 --dropout 0.7

@@ -1,4 +1,8 @@
 tensorflow==2.2.*
+mlflow
 pandas==1.0.*
 numpy==1.18.*
-
+eventlet
+Pillow
+python-socketio
+flask

@@ -44,13 +44,32 @@ def _load_images(data_idx):
     # Assert now to be sure:
     assert all(Path(s).stem.startswith(cam) for s in img_paths)
     imgs = np.stack([imread(path) for path in img_paths])
+    print(f"Loaded {len(imgs)} images")
     return imgs
+
+
+def _load_data(hflip_augmentation: bool = False):
+    data_idx = _load_csvs(DATA_PATH)
+    imgs = _load_images(data_idx)
+    angles = data_idx["steering_angle"].values
+
+    if not hflip_augmentation:
+        return imgs, angles
+
+    # Apply horizontal flip augmentation
+    hflip_imgs = np.array([np.fliplr(img) for img in imgs])
+    hflip_angles = angles * -1
+
+    all_imgs = np.concatenate((imgs, hflip_imgs))
+    all_angles = np.concatenate((angles, hflip_angles))
+
+    return all_imgs, all_angles
 
 
 def _build_model(img_shape, *, learning_rate, dropout):
     model = tf.keras.Sequential()
-    # Crop 60 pix from top, 40 from bottom:
-    model.add(layers.Cropping2D(cropping=((60, 40), (0, 0)), input_shape=img_shape))
+    # Crop 50 pix from top, 40 from bottom:
+    model.add(layers.Cropping2D(cropping=((50, 40), (0, 0)), input_shape=img_shape))
     model.add(layers.Lambda(lambda x: (x / 128.) - 0.5))
 
     pretrained_net = tf.keras.applications.MobileNetV2(
@@ -67,13 +86,12 @@ def _build_model(img_shape, *, learning_rate, dropout):
 
     # print(model.summary())
 
-    #def _mse_loss_rescaled(y_true, y_pred):
-    #    return 1000 * tf.keras.losses.mean_squared_error(y_true, y_pred)
+    # def _mse_loss_rescaled(y_true, y_pred):
+    #     return 1000 * tf.keras.losses.mean_squared_error(y_true, y_pred)
 
     model.compile(
         optimizer=tf.keras.optimizers.Adam(lr=learning_rate),
-    #    loss=_mse_loss_rescaled,
-        loss=tf.keras.losses.mean_absolute_error,
+        loss=tf.keras.losses.mean_squared_error,
         metrics=[]
     )
 
@@ -87,14 +105,14 @@ def _fit(model, imgs, angles, *, epochs, lr_start):
 
     factor = .1
     reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(
-        factor=.1,
-        patience=4,
+        factor=factor,
+        patience=5,
         verbose=1,
         min_lr=lr_start * factor ** 2   # Allows for 2 drops
     )
     early_stop = tf.keras.callbacks.EarlyStopping(
         verbose=1,
-        patience=8,
+        patience=12,
         restore_best_weights=True  # Causes MLflow to log metrics of restored (best) model.
         # WARNING: this only works in case early stopping is indeed
         # triggered. If it isn't the MLflow metrics aren't reliable.
@@ -119,9 +137,7 @@ def main(exp, epochs, lr, dropout):
     model_id = next(iter(funkybob.RandomNameGenerator()))
     print(f"Model id is {model_id}")
 
-    data_idx = _load_csvs(DATA_PATH)
-    imgs = _load_images(data_idx)
-    angles = data_idx["steering_angle"].values
+    imgs, angles = _load_data(hflip_augmentation=True)
 
     mlflow.set_experiment(exp)
     mlflow.start_run(run_name=model_id)
@@ -129,6 +145,8 @@ def main(exp, epochs, lr, dropout):
     mlflow.log_param("dropout", dropout)
 
     model = _build_model(imgs.shape[1:], learning_rate=lr, dropout=dropout)
+
+    print(f"{model_id} starting training...")
     _fit(model, imgs, angles, epochs=epochs, lr_start=lr)
 
     mlflow.end_run()

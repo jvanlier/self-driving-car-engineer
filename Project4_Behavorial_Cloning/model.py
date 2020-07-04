@@ -37,7 +37,12 @@ def _load_csvs(data_path):
     df = df.drop(["throttle", "brake", "speed"], axis=1)
 
     def update_path(path):
-        return path.replace("/Users/jvlier/SimData", str(DATA_PATH))
+        if "SimData" in path:
+            return path.replace("/Users/jvlier/SimData", str(DATA_PATH))
+        elif "Udacity_Project4" in path:
+            return path.replace("/Users/jvlier/Udacity_Project4/data", str(DATA_PATH))
+        else:
+            raise FileNotFoundError(f"Couldn't fix path: {path}")
 
     for col in ["left", "center", "right"]:
         df[col] = df[col].map(update_path)
@@ -99,14 +104,9 @@ def _fit(model, imgs, angles, model_path: Path, *, epochs, lr_start):
         verbose=1,
         patience=8,
         restore_best_weights=True  # Causes MLflow to log metrics of restored (best) model.
-        # FIXME: this only works in case early stopping is indeed triggered.
-        # If it isn't, MLFlow's log seems to be completely unreliable. I've seen it log the 2nd
-        # epoch for a 100 epoch run, where the 2nd was quite bad, but a bit beter than the first,
-        # but still much worse than later epochs. No idea why it would choose to do that...
-        #
+        # WARNING: this only works in case early stopping is indeed triggered.
         # Workaround: call fit with a very high # of epochs.
-        #
-        # Possibly better workaround: use ModelCheckpoint instead, with save_best_only, and 
+        # Possibly better workaround: use ModelCheckpoint instead, with save_best_only, and
         # *always* load that after the fit. But that might require explict logging rather than
         # autolog.
     )
@@ -115,7 +115,8 @@ def _fit(model, imgs, angles, model_path: Path, *, epochs, lr_start):
               callbacks=[
                   early_stop,
                   reduce_lr,
-                  save_ckpt
+                  # Grabbing the best model from mlflow instead for now.
+                  # save_ckpt
               ])
 
 
@@ -127,8 +128,8 @@ def _fit(model, imgs, angles, model_path: Path, *, epochs, lr_start):
 def main(epochs, lr, dropout):
     model_id_prefix = f"model_maxepochs-{epochs}_lr-{lr}_dropout-{dropout}_v"
     model_path = _determine_model_path(model_id_prefix)
-    # model_id is the same as model_id_prefix, but with double-digit version number, e.g. v01 - v99
-    # suffix:
+    # model_id is the same as model_id_prefix, but with double-digit
+    # version number, e.g. v01 - v99 suffix:
     model_id = model_path.name
     print(f"Model id is {model_id}")
 
@@ -136,8 +137,10 @@ def main(epochs, lr, dropout):
     imgs = _load_images(data_idx)
     angles = data_idx["steering_angle"].values
 
+    mlflow.set_experiment("v2_fix_dirt_turn")
     mlflow.start_run(run_name=model_id)
     autolog()
+    mlflow.log_param("dropout", dropout)
 
     model = _build_model(imgs.shape[1:], learning_rate=lr, dropout=dropout)
     _fit(model, imgs, angles, model_path, epochs=epochs, lr_start=lr)

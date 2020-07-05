@@ -163,7 +163,7 @@ To augment the data set, I also flipped images and angles thinking that this wou
 ![Example of flip 1][flip1]
 ![Example of flip 2][flip2]
 
-After the collection process, I had 9.500 of data points (pre augmentation). The data was not preprocessed since this was handled inside the fist layer of the network (centering, scaling and cropping.)
+After the collection process, I had 9.500 data points (pre augmentation). I only used the center camera. The data was not preprocessed since this was handled inside the fist layer of the network (centering, scaling and cropping.)
 
 
 I finally randomly shuffled the data set and put 20 % of the data into a validation set. 

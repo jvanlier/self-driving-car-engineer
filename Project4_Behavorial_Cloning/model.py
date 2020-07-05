@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
+"""This module fits a single model and logs results into MLflow.
+
+Command line arguments can be used to control selected hyperparameters.
+See python model.py --help for details
+"""
 from pathlib import Path
 
 import click
+import funkybob
 from imageio import imread
 import mlflow
 from mlflow.tensorflow import autolog
@@ -10,7 +16,6 @@ import pandas as pd
 from sklearn.utils import shuffle
 import tensorflow as tf
 import tensorflow.keras.layers as layers
-import funkybob
 
 
 DATA_PATH = Path("~/data/udacity-project4-sim-data").expanduser()
@@ -18,6 +23,9 @@ BATCH_SIZE = 128
 
 
 def _load_csvs(data_path):
+    """Load CSV & correct paths from local data collection location to
+    what we need here to train on GPU.
+    """
     csvs = data_path.glob("*/*.csv")
     csv_header = ["center", "left", "right", "steering_angle", "throttle", "brake", "speed"]
     df = pd.concat((pd.read_csv(csv, names=csv_header) for csv in csvs))
@@ -37,6 +45,7 @@ def _load_csvs(data_path):
 
 
 def _load_images(data_idx):
+    """Load images from *center* camera only."""
     cam = "center"
     img_paths = data_idx[cam].values
     # It turns out that I was using left accidentally for v1 and v2 due to
@@ -49,6 +58,7 @@ def _load_images(data_idx):
 
 
 def _load_data(hflip_augmentation: bool = False):
+    """Load images and angles, optionally with horizontal flip."""
     data_idx = _load_csvs(DATA_PATH)
     imgs = _load_images(data_idx)
     angles = data_idx["steering_angle"].values
@@ -67,9 +77,13 @@ def _load_data(hflip_augmentation: bool = False):
 
 
 def _build_model(img_shape, *, learning_rate, dropout):
+    """Build and compile the model."""
     model = tf.keras.Sequential()
     # Crop 50 pix from top, 40 from bottom:
     model.add(layers.Cropping2D(cropping=((50, 40), (0, 0)), input_shape=img_shape))
+    # Centering and scaling with a Lambda layer ensures that data
+    # coming in at test time can also be centered and scaled 
+    # efficiently:
     model.add(layers.Lambda(lambda x: (x / 128.) - 0.5))
 
     pretrained_net = tf.keras.applications.MobileNetV2(
@@ -78,16 +92,10 @@ def _build_model(img_shape, *, learning_rate, dropout):
         pooling="avg",  # This applies AveragePooling at the end to flatten output.
     )
     model.add(pretrained_net)
-    # model.add(layers.Dense(128, activation="relu"))
     model.add(layers.Dropout(dropout))
 
     # No activation function:
     model.add(layers.Dense(1))
-
-    # print(model.summary())
-
-    # def _mse_loss_rescaled(y_true, y_pred):
-    #     return 1000 * tf.keras.losses.mean_squared_error(y_true, y_pred)
 
     model.compile(
         optimizer=tf.keras.optimizers.Adam(lr=learning_rate),
@@ -99,8 +107,11 @@ def _build_model(img_shape, *, learning_rate, dropout):
 
 
 def _fit(model, imgs, angles, *, epochs, lr_start):
-    # validation_split in fit() picks from the end of the array by default, so shuffle first to get
-    # a random split:
+    """Fit the model using ReduceLROnPlateau and EarlyStopping
+    callbacks.
+    """
+    # validation_split in model.fit() picks from the end of the array
+    # by default, so shuffle first to get a random split:
     imgs, angles = shuffle(imgs, angles, random_state=42)
 
     factor = .1
@@ -113,14 +124,18 @@ def _fit(model, imgs, angles, *, epochs, lr_start):
     early_stop = tf.keras.callbacks.EarlyStopping(
         verbose=1,
         patience=12,
-        restore_best_weights=True  # Causes MLflow to log metrics of restored (best) model.
+        # The next arg causes MLflow to log metrics of restored (best) 
+        # model.
         # WARNING: this only works in case early stopping is indeed
-        # triggered. If it isn't the MLflow metrics aren't reliable.
-        # Workaround: call fit with a very high # of epochs.
+        # triggered. If it isn't, the MLflow metrics aren't reliable.
+        # Workaround: call fit with a very high # of epochs in order to
+        # guarantee early stopping.
         # Google search reveals that this is a known quirk, to fix use
         # ModelCheckpoint instead, with save_best_only, and
-        # *always* load that after the fit.
-        # But that might require explict logging rather than autolog.
+        # *always* load the best when fitting is completed.
+        # But that might require explict logging to MLflow rather than 
+        # the autolog I'm using now.
+        restore_best_weights=True
     )
 
     model.fit(imgs, angles, batch_size=BATCH_SIZE, epochs=epochs, validation_split=.2,
@@ -129,11 +144,13 @@ def _fit(model, imgs, angles, *, epochs, lr_start):
 
 @click.command()
 @click.option("--exp", help="Name of experiment (in mlflow)")
-@click.option("--epochs", default=150,
+@click.option("--epochs", default=200,
               help="Maximum number of epochs to train for (unless early stop gets triggered).")
-@click.option("--lr", default=1e-3, help="Learning rate.")
-@click.option("--dropout", default=.3, help="Dropout rate (fraction of units to drop).")
+@click.option("--lr", default=1e-2, help="Learning rate.")
+@click.option("--dropout", default=.5, help="Dropout rate (fraction of units to drop).")
 def main(exp, epochs, lr, dropout):
+    # I use random but memorable model ids to easily tell them apart
+    # in the MLflow UI:
     model_id = next(iter(funkybob.RandomNameGenerator()))
     print(f"Model id is {model_id}")
 

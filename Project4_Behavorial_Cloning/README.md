@@ -168,7 +168,7 @@ After the collection process, I had 9.500 data points (pre augmentation). I only
 
 I finally randomly shuffled the data set and put 20 % of the data into a validation set. 
 
-The remaining 80 % was used to train the model. The validation set helped determine if the model was over- or underfitting. The training approach involves stepwise learning rate annealing, early stopping + using the weights that minimized the validation loss, and exploring the hyperparameter space with MLflow. This was explained in detail above. The final model had a dropout of 0.5, optimal starting learning rate of 0.01, and had the lowest validation loss of 0.003 at 63 epochs. Training was terminated at 75 epochs (at which point the learning rate was dropped to 0.0001).
+The remaining 80 % was used to train the model. The validation set helped determine if the model was over- or underfitting. The training approach involves stepwise learning rate annealing, early stopping and using the weights from the epoch where the validation loss was minimal, and exploring the hyperparameter space with MLflow. This was explained in detail above. The final model had a dropout of 0.5, optimal starting learning rate of 0.01, and had the lowest validation loss of 0.003 at 63 epochs. Training was terminated at 75 epochs (at which point the learning rate was dropped to 0.0001).
 
 ![MLflow final experiment][mlflow-final]
 

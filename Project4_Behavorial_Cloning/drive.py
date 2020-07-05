@@ -1,3 +1,7 @@
+"""File was shipped with the project instructions and is left mostly
+as-is, apart from minor changes for TF 2 compability and changing the
+default speed from 9 to 20.
+"""
 import argparse
 import base64
 from datetime import datetime
@@ -44,7 +48,7 @@ class SimplePIController:
 
 
 controller = SimplePIController(0.1, 0.002)
-set_speed = 15
+set_speed = 20
 controller.set_desired(set_speed)
 
 

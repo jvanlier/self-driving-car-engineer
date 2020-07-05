@@ -1,3 +1,4 @@
+"""File was shipped with the project instructions and is unchanged."""
 from moviepy.editor import ImageSequenceClip
 import argparse
 import os

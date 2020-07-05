@@ -48,6 +48,8 @@ python drive.py model.h5
 
 Note: the data was originally collected using "Fastest" Graphics Quality. To make the environment look similar as to what the model was exposed to during training, ensure to pick Fastest when testing. The resolution does not matter.
 
+I have chosen not to use a generator in `model.py`, because the data easily fits into memory on `p2.xlarge` AWS instance. This instance has 61 GB of memory. The Python process allocates approx 4.5 GB of memory (RES) to load the images into a numpy array, which is only 7 % of the total available memory. The advantage is that during training, images can be loaded straight from main memory instead of from disk, saving on IO. I am familiar with generators as demonstrated (in an otherwise unrelated project) [here](https://github.com/jvanlier/teslacamerge/blob/962a1626f80b6e8c28c38ed3e5837803ec065496/tcmlib/loader.py#L90).  
+ 
 #### 3. Submission code is usable and readable
 
 The `model.py` file contains the code for training and saving the convolution neural network. The file shows the pipeline I used for training and validating the model, and it contains comments to explain how the code works.

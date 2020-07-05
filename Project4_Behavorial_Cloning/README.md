@@ -17,8 +17,8 @@ The goals / steps of this project are the following:
 [recovery1]: ./writeup-imgs/recovery1.png "Example of recovery 1"
 [recovery2]: ./writeup-imgs/recovery2.png "Example of recovery 2"
 [recovery3]: ./writeup-imgs/recovery3.png "Example of recovery 3"
-[flip1]: ./writeup-imgs/flip1.png "Example of flip 1"
-[flip2]: ./writeup-imgs/flip2.png "Example of flip 2"
+[flip1]: ./writeup-imgs/flip1.jpg "Example of flip 1"
+[flip2]: ./writeup-imgs/flip2.jpg "Example of flip 2"
 [mlflow-final]: ./writeup-imgs/mlflow-final.png "MLflow final experiment"
 [tensorboard]: ./writeup-imgs/tensorboard.png "Tensorboard"
 

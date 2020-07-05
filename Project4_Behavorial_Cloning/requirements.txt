@@ -6,3 +6,4 @@ eventlet
 Pillow
 python-socketio
 flask
+moviepy

@@ -50,7 +50,7 @@ Note: the data was originally collected using "Fastest" Graphics Quality. To mak
 
 #### 3. Submission code is usable and readable
 
-The model.py file contains the code for training and saving the convolution neural network. The file shows the pipeline I used for training and validating the model, and it contains comments to explain how the code works.
+The `model.py` file contains the code for training and saving the convolution neural network. The file shows the pipeline I used for training and validating the model, and it contains comments to explain how the code works.
 
 ### Model Architecture and Training Strategy
 
@@ -74,19 +74,21 @@ The final measure that reduces overfitting is early stopping: I automatically st
 
 #### 3. Model parameter tuning
 
-To find an optimal learning rate and rate for the final Dropout layer, I ran multiple experiments and logged the results in MLflow. Within Mlflow, I was able to compare diferent runs and choose the values that yielded the lowest validation loss. Using this method, I settled on an initial learning rate 0.01 and dropout of .5. Note that the LR gets dropped automatically by a factor 10, twice, when a plateau has been encountered (see the `ReduceLROnPlateau` callback on lines 118 - 123 in `model.py`).
+I use an Adam optimizer, but I still find that it is valuable to use an appropriate learning rate (LR): a higher LR leads to faster training initially, as long as it isn't so high that it causes the loss to diverge. This, combined with dropping the LR as a plateau is reached (also called learning rate annealing), leads to finding a better model in less time.
 
-Example of what this looks like in MLflow:
+To find an optimal initial LR and rate for the final Dropout layer, I ran multiple experiments and logged the results in MLflow. Within MLflow, I was able to easily compare diferent runs and choose the values that yielded the lowest validation loss. Using this method, I settled on an initial learning rate 0.01 and dropout of .5. Note that the LR gets dropped automatically by a factor 10, at most twice, when a plateau has been encountered (see the `ReduceLROnPlateau` callback on lines 118 - 123 in `model.py`).
+
+Example of what this looks like in MLflow (not the final model):
 
 ![MLflow example image][mlflow]
 
 #### 4. Appropriate training data
 
-Training data was chosen to keep the vehicle driving on the road. I used a combination:
+Training data was chosen to keep the vehicle driving on the road. I used a combination of:
 
 - center lane driving: 2 laps
 - recovering from the left and right sides of the road: 2 laps
-- center lane driving, the other way around: 1 lap
+- center lane driving, reverse direction: 1 lap
 - various specific examples to counteract bad behavior seen in simulator with earlier versions of the model
 
 For details about how I created the training data, see the next section. 
@@ -95,27 +97,48 @@ For details about how I created the training data, see the next section.
 
 #### 1. Solution Design Approach
 
-The overall strategy for deriving a model architecture was to start from a existing lightweight Convolutional Neural Network. A large advantage of using an existing Neural Network architecture is the ability to leverage peer reviewed research, and the ability to load pre-trained weights which significantly reduces training time.
+The overall strategy for deriving a model architecture was to start from an existing lightweight Convolutional Neural Network. A large advantage of using an existing Neural Network architecture is the ability to leverage peer reviewed research, and the ability to load pre-trained weights which significantly reduces training time.
 
 My first step was to start out as simple as possible: just this network, the Lambda layer to rescale the pixel values, and a single output node without activation function.
 
 In order to gauge how well the model was working, I split my image and steering angle data into a training and validation set. I found that my first model had a low mean squared error on the training set but a high mean squared error on the validation set. This implied that the model was overfitting. 
 
-To combat overfitting, I added a dropout layer just before the output layer.
+To combat overfitting, I added a Dropout layer just before the output layer.
 
-Now, the difference in loss between train and validation was much smaller, and both were quite low. 
-Now I'd run it into the simulator and notice it fell off the track in the first dirt turn. To counteract this, I added more data from this specific turn (approx 10 examples) and would try again.
+After this, the difference in loss between train and validation was much smaller, and both losses were quite low in general (< 0.01). 
+Next, I ran the simulator and noticed it fell off the track in the first dirt turn. To counteract this, I added more data from this specific turn (approx 10 examples) and tried again.
 
 Unfortunately, after retraining, the car would drop off at a different turn. I now made several changes:
 
 - Crop the top and bottom part of the image to improve bias
 - Horizontally flip the images and angles to improve variance (reduce overfitting)
 
-Retraining now led to the final model in this submission: it successfully drove around the track without leaving the road.
+Retraining after these tweaks led to the final model in this submission: it successfully drove around the track without leaving the road.
 
 #### 2. Final Model Architecture
 
-The final model architecture (`model.py` lines 79 - 98) consisted of a pre-trained MobileNetV2 architecture (with imagenet weights). The base of that model was followed by a Dropout layer and a single output node.
+The final model architecture (`model.py` lines 79 - 98) consisted of a pre-trained MobileNetV2 architecture (with ImageNet weights). The base of that model was followed by a Dropout layer and a single output node (no activation function). Cropping and centering & scaling are done inside the model. The model is summarized as follows:
+
+```
+_________________________________________________________________
+Layer (type)                 Output Shape              Param #
+=================================================================
+cropping2d (Cropping2D)      (None, 70, 320, 3)        0
+_________________________________________________________________
+lambda (Lambda)              (None, 70, 320, 3)        0
+_________________________________________________________________
+mobilenetv2_1.00_224 (Model) (None, 1280)              2257984
+_________________________________________________________________
+dropout (Dropout)            (None, 1280)              0
+_________________________________________________________________
+dense (Dense)                (None, 1)                 1281
+=================================================================
+Total params: 2,259,265
+Trainable params: 2,225,153
+Non-trainable params: 34,112
+```
+
+Where `mobilenetv2_1.00_224` corresponds to the Keras implementation of MobileNetV2 [here](https://keras.io/api/applications/mobilenet/). [Link to original paper](https://arxiv.org/abs/1801.04381).
 
 #### 3. Creation of the Training Set & Training Process
 

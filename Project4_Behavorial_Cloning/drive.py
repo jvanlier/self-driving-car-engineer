@@ -1,6 +1,5 @@
 """File was shipped with the project instructions and is left mostly
-as-is, apart from minor changes for TF 2 compability and changing the
-default speed from 9 to 20.
+as-is, apart from minor changes for TF 2 compability.
 """
 import argparse
 import base64
@@ -48,7 +47,7 @@ class SimplePIController:
 
 
 controller = SimplePIController(0.1, 0.002)
-set_speed = 20
+set_speed = 9
 controller.set_desired(set_speed)
 
 
